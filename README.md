@@ -1,12 +1,15 @@
 # Trabalho Final de Sistemas Operacionais
 
-## Grupo
-- Aluno 1:
-- Aluno 2:
-- Aluno 3:
+## Grupo,
+- Aluno 1: CAUÊ CAVALHEIRO SCHILLING 
+- Aluno 2: IGOR TERRES DE OLIVEIRA
+- Aluno 3: JOÃO MIGUEL VIEIRA DALSOTO
+- Aluno 4: JOSUÉ HENRIQUE BECKER SCHWARTZHAUPT
+- Aluno 5: LUCAS DOS PASSOS ALMEIDA
+- Aluno 6: VICTOR MATHEUS HERRMANN
 
 ## Linguagem utilizada
-C / C++ / Java
+Java
 
 ## Premissas do escalonador
 - Quantum:

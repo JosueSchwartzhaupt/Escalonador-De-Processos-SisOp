@@ -31,17 +31,21 @@ public class Main {
     // ----------------------------------------------------------------
     // PCB — arrays paralelos
     // ----------------------------------------------------------------
-    static int[] pid           = new int[MAX_PROC];
-    static int[] ppid          = new int[MAX_PROC];
+    static int[] pid             = new int[MAX_PROC];
+    static int pidRegistrados    = 0;
 
-    static int[] tempoChegada   = new int[MAX_PROC];
-    static int[] tempoTotal = new int[MAX_PROC];
-    static int[] tempoProcessado   = new int[MAX_PROC];
+    static int[] ppid            = new int[MAX_PROC];
 
-    static int[] status        = new int[MAX_PROC];
-    static int[] tipoIO        = new int[MAX_PROC];
+    static int[] tempoChegada  = new int[MAX_PROC];
+    static int[] tempoTotal      = new int[MAX_PROC];
+    static int[] tempoProcessado = new int[MAX_PROC];
 
-    static int[] ioRestante    = new int[MAX_PROC];
+    static int[] status          = new int[MAX_PROC];
+
+    //TODO: Ver se queremos que um processo possa ter mais de um evento IO
+    static int[] tipoIO          = new int[MAX_PROC];
+    static int[] inicioProximoIo = new int[MAX_PROC];
+    static int[] ioProcessado = new int[MAX_PROC];
 
     // ----------------------------------------------------------------
     // FILAS — arrays simples (não circulares) com ponteiro de tamanho
@@ -53,8 +57,6 @@ public class Main {
     static Queue<Integer> filaAlta = new LinkedList<>();
 
     static Queue<Integer> filaBaixa = new LinkedList<>();
-
-
 
 
     public static void main(String[] args) {
@@ -94,12 +96,14 @@ public class Main {
         imprimirResumoFinal();
     }
 
-    private static boolean isProcessoFinalizado(int processoAtual) {
-        return false;
+    private static void inicializarProcessos() {
+        registrarNovoProcesso(0,4,NENHUM,-1);
+        registrarNovoProcesso(4,4,NENHUM,-1);
+        registrarNovoProcesso(8,4,NENHUM,-1);
+        registrarNovoProcesso(12,4,NENHUM,-1);
     }
 
-    private static boolean processoSolicitouIO(int processoAtual) {
-        return false;
+    private static void inicializarFilas() {
     }
 
     private static boolean existemProcessosNaoFinalizados() {
@@ -112,22 +116,45 @@ public class Main {
     private static void atualizarFilasDeIo(int tempo) {
     }
 
-    private static void inicializarProcessos() {
-    }
-
-    private static void inicializarFilas() {
-    }
-
     private static void registrarCpuOciosa(int tempo) {
     }
 
     private static void executarPorAteUmQuantum(int processoAtual) {
     }
 
+    private static boolean isProcessoFinalizado(int processoAtual) {
+        return false;
+    }
+
+    private static boolean processoSolicitouIO(int processoAtual) {
+        return false;
+    }
+
     private static void imprimirLinhaDoTempo() {
     }
 
     private static void imprimirResumoFinal() {
+    }
+
+    private static void registrarNovoProcesso(int tempoDeChegada, int tempoDeProcessamentoTotal, int tipoDeIo, int inicioDoProcessamentoIo) {
+        int pidDoProcesso = proximoPidDisponivel();
+        pid[pidDoProcesso] = pidDoProcesso;
+
+        ppid[pidDoProcesso] = -1;
+
+        tempoChegada[pidDoProcesso]    = tempoDeChegada;
+        tempoTotal[pidDoProcesso]      = tempoDeProcessamentoTotal;
+        tempoProcessado[pidDoProcesso] = 0;
+
+        status[pidDoProcesso]          = NOVO;
+
+        tipoIO[pidDoProcesso]          = tipoDeIo;
+        inicioProximoIo[pidDoProcesso] = inicioDoProcessamentoIo;
+        ioProcessado[pidDoProcesso]    = 0;
+    }
+
+    private static int proximoPidDisponivel() {
+        return pidRegistrados >= MAX_PROC? -1 : pidRegistrados++;
     }
 
 }

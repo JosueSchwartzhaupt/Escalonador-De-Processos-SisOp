@@ -1,8 +1,7 @@
 package com.sisop;
 
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 public class Main {
 
@@ -58,6 +57,9 @@ public class Main {
 
     static Queue<Integer> filaBaixa = new LinkedList<>();
 
+    static int tempoAnterior = 0;
+
+    static Map<Integer, List<String>> linhaDoTempo = new HashMap<>();
 
     public static void main(String[] args) {
         inicializarProcessos();
@@ -79,10 +81,10 @@ public class Main {
             }
 
             status[processoAtual] = EXECUTANDO;
-            executarPorAteUmQuantum(processoAtual);
+            tempo += executarPorAteUmQuantum(processoAtual, tempo);
 
             if (isProcessoFinalizado(processoAtual)) status[processoAtual] = FINALIZADO;
-            else if (processoSolicitouIO(processoAtual)) {
+            else if (processoSolicitouIO(processoAtual, tempo)) {
                 status[processoAtual] = BLOQUEADO;
                 filaIO.add(processoAtual);
             }
@@ -104,13 +106,33 @@ public class Main {
     }
 
     private static void inicializarFilas() {
+
     }
 
     private static boolean existemProcessosNaoFinalizados() {
-        return false;
+        return Arrays.stream(status)
+                .limit(pidRegistrados)
+                .filter(statusDoProcesso -> statusDoProcesso != FINALIZADO)
+                .findAny()
+                .isPresent();
     }
 
     private static void moverNovosProcessosParaFilaAlta(int tempo) {
+        var processosParaAdicionar = new HashMap<Integer, Integer>();
+        for (int id = 0; id < pidRegistrados; id++) {
+            if(status[id] == NOVO && tempoChegada[id] <= tempo){
+                processosParaAdicionar.put(id, tempoChegada[id]);
+                status[id] = PRONTO;
+            }
+        }
+
+        processosParaAdicionar.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .forEach(id -> {
+                    filaAlta.add(id);
+                    loggarNaLinhaDoTempo(tempoChegada[id], "P"+id + " criado → fila ALTA");
+                });
     }
 
     private static void atualizarFilasDeIo(int tempo) {
@@ -119,18 +141,40 @@ public class Main {
     private static void registrarCpuOciosa(int tempo) {
     }
 
-    private static void executarPorAteUmQuantum(int processoAtual) {
+    private static int executarPorAteUmQuantum(int processoAtual, int tempo) {
+        int tempoQueFalta = tempoTotal[processoAtual] - tempoProcessado[processoAtual];
+        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM ? tempo - inicioProximoIo[processoAtual] : QUANTUM;
+        int tempoParaProcessar = Math.min(tempoQueFalta ,Math.min(tempoAteInterrupcao, QUANTUM));
+
+        tempoProcessado[processoAtual] += tempoParaProcessar;
+        loggarNaLinhaDoTempo(tempo, "CPU executa P"+processoAtual + " por " + tempoParaProcessar + " unidades");
+        return tempoParaProcessar;
     }
 
+    //TODO: testar também se o tempo De IO foi processado
     private static boolean isProcessoFinalizado(int processoAtual) {
-        return false;
+        return tempoProcessado[processoAtual] == tempoTotal[processoAtual];
     }
 
-    private static boolean processoSolicitouIO(int processoAtual) {
-        return false;
+    private static boolean processoSolicitouIO(int processoAtual, int tempo) {
+        return tipoIO[processoAtual] != NENHUM && inicioProximoIo[processoAtual] <= tempo;
     }
 
     private static void imprimirLinhaDoTempo() {
+        linhaDoTempo.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entrada -> {
+                    String prefixo = String.format("[t=%03d] ", entrada.getKey());
+                    String indentacao = " ".repeat(prefixo.length());
+
+                    for (int i = 0; i < entrada.getValue().size(); i++) {
+                        if (i == 0) {
+                            System.out.println(prefixo + entrada.getValue().get(i));
+                        } else {
+                            System.out.println(indentacao + entrada.getValue().get(i));
+                        }
+                    }
+                });
     }
 
     private static void imprimirResumoFinal() {
@@ -155,6 +199,12 @@ public class Main {
 
     private static int proximoPidDisponivel() {
         return pidRegistrados >= MAX_PROC? -1 : pidRegistrados++;
+    }
+
+    private static void loggarNaLinhaDoTempo(int tempo, String mensagem){
+        linhaDoTempo
+                .computeIfAbsent(tempo, k -> new ArrayList<>())
+                .add(mensagem);
     }
 
 }

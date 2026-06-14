@@ -138,6 +138,7 @@ public class Main {
     //TODO: Ver se é essa a logica da fila de IO, talves aqui precise fazer round robin também
     private static void atualizarFilasDeIo(int tempo) {
         int tempoDisponivel = tempo - tempoAnterior;
+        int instanteAtualIo = tempoAnterior;
 
         while (tempoDisponivel > 0 && !filaIO.isEmpty()) {
             int pid = filaIO.peek();
@@ -154,9 +155,10 @@ public class Main {
 
             ioProcessado[pid] += tempoUsado;
             tempoDisponivel -= tempoUsado;
+            instanteAtualIo += tempoUsado;
 
             if (ioConcluido(pid)) {
-                finalizarIo(pid, (tempo + tempoUsado));
+                finalizarIo(pid, (tempoAnterior + instanteAtualIo));
             }
         }
 

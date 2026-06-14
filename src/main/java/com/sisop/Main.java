@@ -225,7 +225,7 @@ public class Main {
     }
 
     private static boolean processoSolicitouIO(int processoAtual, int tempo) {
-        return tempoProcessado[processoAtual] >= inicioProximoIo[processoAtual]
+        return tempoProcessado[processoAtual] >= inicioProximoIo[processoAtual];
     }
 
     private static void imprimirLinhaDoTempo() {

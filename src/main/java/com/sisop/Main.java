@@ -99,10 +99,10 @@ public class Main {
     }
 
     private static void inicializarProcessos() {
-        registrarNovoProcesso(0,4,NENHUM,-1);
-        registrarNovoProcesso(4,4,NENHUM,-1);
-        registrarNovoProcesso(8,4,NENHUM,-1);
-        registrarNovoProcesso(12,4,NENHUM,-1);
+        registrarNovoProcesso(0,4,DISCO,2);
+        registrarNovoProcesso(4,5,NENHUM,-1);
+        registrarNovoProcesso(8,7,NENHUM,-1);
+        registrarNovoProcesso(12,8,NENHUM,-1);
     }
 
     private static void inicializarFilas() {
@@ -135,15 +135,80 @@ public class Main {
                 });
     }
 
+    //TODO: Ver se é essa a logica da fila de IO, talves aqui precise fazer round robin também
     private static void atualizarFilasDeIo(int tempo) {
+        int tempoDisponivel = tempo - tempoAnterior;
+
+        while (tempoDisponivel > 0 && !filaIO.isEmpty()) {
+            int pid = filaIO.peek();
+
+            if (tipoIO[pid] == NENHUM) {
+                filaIO.remove();
+                continue;
+            }
+
+            int tempoUsado = Math.min(
+                    duracaoIo(tipoIO[pid]) - ioProcessado[pid],
+                    tempoDisponivel
+            );
+
+            ioProcessado[pid] += tempoUsado;
+            tempoDisponivel -= tempoUsado;
+
+            if (ioConcluido(pid)) {
+                finalizarIo(pid, (tempo + tempoUsado));
+            }
+        }
+
+        tempoAnterior = tempo;
+    }
+
+    private static void finalizarIo(int pid, int instanteFinalizado) {
+        filaIO.remove();
+
+        status[pid] = PRONTO;
+
+        if (tipoIO[pid] == DISCO) {
+            filaBaixa.add(pid);
+            loggarNaLinhaDoTempo(instanteFinalizado, "P" + pid + " retornou do DISCO -> fila BAIXA");
+        } else {
+            filaAlta.add(pid);
+            loggarNaLinhaDoTempo(instanteFinalizado, "P" + pid + " retornou de " + nomeIO(tipoIO[pid]) + " -> fila ALTA");
+        }
+
+        ioProcessado[pid] = -1;
+        tipoIO[pid] = NENHUM;
+    }
+
+    private static boolean ioConcluido(int pid) {
+        return ioProcessado[pid] >= duracaoIo(tipoIO[pid]);
+    }
+
+    private static int duracaoIo(int tipoIo) {
+        return switch (tipoIo) {
+            case DISCO      -> 8;
+            case FITA       -> 3;
+            case IMPRESSORA -> 5;
+            default         -> 0;
+        };
+    }
+
+    static String nomeIO(int t) {
+        switch (t) {
+            case DISCO:      return "DISCO";
+            case FITA:       return "FITA";
+            case IMPRESSORA: return "IMPRESSORA";
+            default:            return "NENHUM";
+        }
     }
 
     private static void registrarCpuOciosa(int tempo) {
+        loggarNaLinhaDoTempo(tempo, "CPU ociosa");
     }
 
     private static int executarPorAteUmQuantum(int processoAtual, int tempo) {
         int tempoQueFalta = tempoTotal[processoAtual] - tempoProcessado[processoAtual];
-        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM ? tempo - inicioProximoIo[processoAtual] : QUANTUM;
+        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM ? inicioProximoIo[processoAtual] -tempo : QUANTUM;
         int tempoParaProcessar = Math.min(tempoQueFalta ,Math.min(tempoAteInterrupcao, QUANTUM));
 
         tempoProcessado[processoAtual] += tempoParaProcessar;

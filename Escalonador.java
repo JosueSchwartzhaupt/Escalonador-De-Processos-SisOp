@@ -46,6 +46,7 @@ public class Escalonador {
     // Prioridades
     static final int PRIO_ALTA       = 0;
     static final int PRIO_BAIXA      = 1;
+    static final int PRIO_IO         = 2;
 
     // ----------------------------------------------------------------
     // PCB — arrays paralelos
@@ -68,20 +69,32 @@ public class Escalonador {
     // ----------------------------------------------------------------
     static final int CAP     = MAX_PROC + 2;
 
-    static int[] filaAlta    = new int[CAP];
-    static int   altaSize    = 0;
+    static int[] filaProntosIO = new int[CAP];
+    static int   prontosIOSize = 0;
 
-    static int[] filaBaixa   = new int[CAP];
-    static int   baixaSize   = 0;
+    static int[] filaAlta      = new int[CAP];
+    static int   altaSize      = 0;
+
+    static int[] filaBaixa     = new int[CAP];
+    static int   baixaSize     = 0;
 
     // Fila de I/O: guardamos índice do processo e seu ioRestante
     // diretamente nos arrays do PCB; a fila só lista quais estão bloqueados
-    static int[] filaIO      = new int[CAP];
-    static int   ioSize      = 0;
+    static int[] filaIO       = new int[CAP];
+    static int   ioSize       = 0;
+
+    //controle de inanição
+    static final int LIMITE_CONSECUTIVO = 2; // max de exec seguidas permitidas
+    static int contExecIO     = 0;
+    static int contExecAlta   = 0;
 
     // ----------------------------------------------------------------
     // OPERAÇÕES DE FILA (arrays simples com shift)
     // ----------------------------------------------------------------
+    static void pushProntosIO(int i) { filaProntosIO[prontosIOSize++] = i; }
+    static int  popProntosIO()       { int v = filaProntosIO[0]; System.arraycopy(filaProntosIO, 1, filaProntosIO, 0, --prontosIOSize); return v; }
+    static boolean prontosIOVazia()  { return prontosIOSize == 0; }
+    
     static void pushAlta(int i)  { filaAlta[altaSize++]   = i; }
     static int  popAlta()        { int v = filaAlta[0]; System.arraycopy(filaAlta,  1, filaAlta,  0, --altaSize);  return v; }
     static boolean altaVazia()   { return altaSize  == 0; }
@@ -107,7 +120,11 @@ public class Escalonador {
             default:            return "NENHUM";
         }
     }
-    static String nomePrio(int p) { return p == PRIO_ALTA ? "ALTA" : "BAIXA"; }
+    static String nomePrio(int p) { 
+        if (p == PRIO_IO) return "PRONTOS I/O";
+        if (p == PRIO_ALTA) return "ALTA";
+        return "BAIXA";
+    }
 
     static void log(int t, String msg) {
         System.out.printf("[t=%03d] %s%n", t, msg);
@@ -143,11 +160,22 @@ public class Escalonador {
         for (int i = 0; i < MAX_PROC; i++) {
             if (status[i] == ST_NOVO && tickChegada[i] <= tempo) {
                 status[i] = ST_PRONTO;
-                pushAlta(i);
-                log(tempo, "P" + pid[i] + " admitido"
-                        + " [cpu=" + cpuTotal[i]
-                        + " io=" + nomeIO(tipoIO[i]) + "]"
-                        + " -> fila ALTA");
+
+                if (tipoIO[i] != IO_NENHUM){
+                    prioridade[i] = PRIO_IO;
+                    pushProntosIO(i);
+                    log(tempo, "P" + pid[i] + " admitido"
+                    + " [cpu=" + cpuTotal[i]
+                    + " io= " + nomeIO(tipoIO[i]) + "]"
+                    + " -> fila PRONTOS I/O");
+                } else {
+                    prioridade[i] = PRIO_ALTA;
+                    pushAlta(i);
+                    log(tempo, "P" + pid[i] + " admitido"
+                            + " [cpu=" + cpuTotal[i]
+                            + " io=" + nomeIO(tipoIO[i]) + "]"
+                            + " -> fila ALTA");
+                }
             }
         }
     }
@@ -178,6 +206,7 @@ public class Escalonador {
             } else {
                 k++;
             }
+            
         }
     }
 
@@ -185,8 +214,9 @@ public class Escalonador {
     // ACUMULAR ESPERA para processos nas filas prontas
     // ----------------------------------------------------------------
     static void acumularEspera() {
-        for (int k = 0; k < altaSize;  k++) acumEspera[filaAlta[k]]++;
-        for (int k = 0; k < baixaSize; k++) acumEspera[filaBaixa[k]]++;
+        for (int k = 0; k < prontosIOSize;  k++) acumEspera[filaProntosIO[k]]++;
+        for (int k = 0; k < altaSize;       k++) acumEspera[filaAlta[k]]++;
+        for (int k = 0; k < baixaSize;      k++) acumEspera[filaBaixa[k]]++;
     }
 
     // ----------------------------------------------------------------
@@ -269,12 +299,38 @@ public class Escalonador {
 
             // 4. Selecionar processo
             int proc = -1;
-            if (!altaVazia()) {
-                proc = popAlta();
-            } else if (!baixaVazia()) {
-                proc = popBaixa();
-            }
 
+            boolean podeIO    = !prontosIOVazia() && contExecIO < LIMITE_CONSECUTIVO;
+            boolean podeAlta  = !altaVazia() && contExecAlta    < LIMITE_CONSECUTIVO;
+            boolean podeBaixa = !baixaVazia();
+
+            if (podeIO) {
+                proc = popProntosIO();
+                contExecIO++;
+                contExecAlta = 0;     //limpa a fila alta
+            }
+            else if (podeAlta) {
+                proc = popAlta();
+                contExecAlta++;
+                contExecIO = 0;       //limpa a fila de IO
+            }
+            else if (podeBaixa) {
+                proc = popBaixa();
+                contExecIO   = 0;     //limpa as outras filas
+                contExecAlta = 0;
+            }
+            // se o limite bloqueou o topo, mas as filas baixas estão vazias, ignoramos o limite para evitar ociosidade
+            else {
+                if (!prontosIOVazia()) {
+                    proc = popProntosIO();
+                    contExecIO++;
+                    contExecAlta = 0;
+                } else if (!altaVazia()) {
+                    proc = popAlta();
+                    contExecAlta++;
+                    contExecIO = 0;
+                }
+            }
             // 5. CPU ociosa?
             if (proc == -1) {
                 log(tempo, "-- CPU ociosa --");
@@ -323,7 +379,7 @@ public class Escalonador {
             } else if (bloq) {
                 status[proc]     = ST_BLOQUEADO;
                 ioRestante[proc] = IO_DURACAO[tipoIO[proc]];
-                pushIO(proc);
+                pushIO(proc); // vai para a lista de bloqueados (fisica)
                 switch (tipoIO[proc]) {
                     case IO_DISCO:      metIODisco++;      break;
                     case IO_FITA:       metIOFita++;       break;

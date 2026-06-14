@@ -41,7 +41,6 @@ public class Main {
 
     static int[] status          = new int[MAX_PROC];
 
-    //TODO: Ver se queremos que um processo possa ter mais de um evento IO
     static int[] tipoIO          = new int[MAX_PROC];
     static int[] inicioProximoIo = new int[MAX_PROC];
     static int[] tempoIoProcessado = new int[MAX_PROC];
@@ -58,9 +57,19 @@ public class Main {
 
     static Queue<Integer> filaBaixa = new LinkedList<>();
 
-    static int tempoAnterior = 0;
+    // ----------------------------------------------------------------
+    // METRICAS
+    // ----------------------------------------------------------------
+
+    static int[] contPreempcoes = new int[MAX_PROC];
+    static int[] instanteFinalizacao = new int[MAX_PROC];
+    static int[] tempoDeEspera = new int[MAX_PROC];
+    static int cpuOciosaTotal;
 
     static Map<Integer, List<String>> linhaDoTempo = new HashMap<>();
+
+    // ----------------------------------------------------------------
+    static int tempoAnterior = 0;
 
     private static int duracaoIo(int tipoIo) {
         return switch (tipoIo) {
@@ -85,11 +94,14 @@ public class Main {
         inicializarFilas();
         int tempo = 0;
 
+        imprimirConfiguracoes();
         while (existemProcessosNaoFinalizados()) {
             moverNovosProcessosParaFilaAlta(tempo);
             atualizarFilasDeIo(tempo);
 
             int processoAtual;
+
+            int tAnterior = tempo;
 
             if (!filaAlta.isEmpty()) processoAtual = filaAlta.remove();
             else if (!filaBaixa.isEmpty()) processoAtual = filaBaixa.remove();
@@ -102,9 +114,12 @@ public class Main {
             status[processoAtual] = EXECUTANDO;
             tempo += executarPorAteUmQuantum(processoAtual, tempo);
 
+            registrarTempoEspera(processoAtual,tempo- tAnterior);
+
             if (isProcessoFinalizado(processoAtual)){
                 status[processoAtual] = FINALIZADO;
                 loggarNaLinhaDoTempo(tempo,"P" + processoAtual+ " finalizado");
+                instanteFinalizacao[processoAtual]= tempo;
             }
             else if (processoSolicitouIO(processoAtual, tempo)) {
                 status[processoAtual] = BLOQUEADO;
@@ -115,12 +130,21 @@ public class Main {
             else {
                 status[processoAtual] = PRONTO;
                 filaBaixa.add(processoAtual);
+                contPreempcoes[processoAtual]++;
                 loggarNaLinhaDoTempo(tempo,"P" + processoAtual + " sofreu preempção -> fila BAIXA");
             }
 
         }
         imprimirLinhaDoTempo();
-        imprimirResumoFinal();
+        imprimirResumoFinal(tempo);
+    }
+
+    private static void registrarTempoEspera(int processoAtual, int tempoPassado) {
+        for (int id = 0; id < pidRegistrados; id++) {
+            if(status[id] == PRONTO && id != processoAtual){
+                tempoDeEspera[id] += tempoPassado;
+            }
+        }
     }
 
     private static void inicializarProcessos() {
@@ -131,7 +155,9 @@ public class Main {
     }
 
     private static void inicializarFilas() {
-
+        filaAlta.clear();
+        filaBaixa.clear();
+        filaIO.clear();
     }
 
     private static boolean existemProcessosNaoFinalizados() {
@@ -160,6 +186,7 @@ public class Main {
                 .forEach(id -> {
                     filaAlta.add(id);
                     loggarNaLinhaDoTempo(tempoChegada[id], "P"+id + " criado → fila ALTA");
+                    tempoDeEspera[id] += tempo - tempoChegada[id];
                 });
     }
 
@@ -185,6 +212,7 @@ public class Main {
 
             if (ioConcluido(idProc)) {
                 finalizarIo(idProc, (instanteAtualIo));
+                tempoDeEspera[idProc] += tempo - instanteAtualIo;
             }
         }
 
@@ -214,6 +242,7 @@ public class Main {
     }
 
     private static void registrarCpuOciosa(int tempo) {
+        cpuOciosaTotal++;
         loggarNaLinhaDoTempo(tempo, "CPU ociosa");
     }
 
@@ -237,7 +266,21 @@ public class Main {
         return tipoIO[processoAtual] != NENHUM && tempoProcessado[processoAtual] == inicioProximoIo[processoAtual];
     }
 
+    private static void imprimirConfiguracoes() {
+        System.out.println("=".repeat(60));
+        System.out.println("  Simulador Round Robin com Feedback");
+        System.out.printf("  quantum=%d | max_processos=%d%n", QUANTUM, MAX_PROC);
+        System.out.println("  I/O: DISCO=8u(→BAIXA) | FITA=3u(→ALTA) | IMPR=5u(→ALTA)");
+        System.out.println("=".repeat(60));
+        System.out.println();
+    }
+
     private static void imprimirLinhaDoTempo() {
+        System.out.println();
+        System.out.println("=".repeat(60));
+        System.out.println("  LINHA DO TEMPO");
+        System.out.println("=".repeat(60));
+
         linhaDoTempo.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entrada -> {
@@ -254,7 +297,37 @@ public class Main {
                 });
     }
 
-    private static void imprimirResumoFinal() {
+    private static void imprimirResumoFinal(int tempoSimulacao) {
+        System.out.println();
+        System.out.println("=".repeat(60));
+        System.out.println("  RESUMO FINAL");
+        System.out.println("=".repeat(60));
+
+        int totalPreempcoes = 0;
+        int somaEspera = 0;
+
+        System.out.printf("%-5s %-10s %-10s %-13s %-10s%n",
+                "PID", "Chegada", "Fim", "Temp Espera", "Preempções");
+        System.out.println("-".repeat(50));
+
+        for (int i = 0; i < pidRegistrados; i++) {
+            totalPreempcoes += contPreempcoes[i];
+            somaEspera += tempoDeEspera[i];
+
+            System.out.printf("P%-4d %-10d %-10d %-13d %-10d%n",
+                    i,
+                    tempoChegada[i],
+                    instanteFinalizacao[i],
+                    tempoDeEspera[i],
+                    contPreempcoes[i]);
+        }
+
+        System.out.println("-".repeat(50));
+        System.out.printf("Tempo total da simulação : %d unidades%n", tempoSimulacao);
+        System.out.printf("CPU ociosa               : %d unidades%n", cpuOciosaTotal);
+        System.out.printf("Total de preempções      : %d%n",          totalPreempcoes);
+        System.out.printf("Tempo de espera médio    : %.2f%n",        (double) somaEspera      / pidRegistrados);
+        System.out.println("=".repeat(60));
     }
 
     private static void registrarNovoProcesso(int tempoDeChegada, int tempoDeProcessamentoTotal, int tipoDeIo, int inicioDoProcessamentoIo) {

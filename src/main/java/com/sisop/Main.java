@@ -169,22 +169,22 @@ public class Main {
 
         // Enquanto ainda tiver tempo não contabilizado e processos esperando na fila de IO
         while (tempoDisponivel > 0 && !filaIO.isEmpty()) {
-            int pid = filaIO.peek();
+            int idProc = filaIO.peek();
 
             // Corrige o tempo disponivel com o tempo de entrada do processo na fila
-            tempoDisponivel = Math.min(tempoDisponivel, tempo - instanteEntradaIo[pid]);
+            tempoDisponivel = Math.min(tempoDisponivel, tempo - instanteEntradaIo[idProc]);
 
             int tempoUsado = Math.min(
-                    duracaoIo(tipoIO[pid]) - tempoIoProcessado[pid],
+                    duracaoIo(tipoIO[idProc]) - tempoIoProcessado[idProc],
                     tempoDisponivel
             );
 
-            tempoIoProcessado[pid] += tempoUsado;
+            tempoIoProcessado[idProc] += tempoUsado;
             tempoDisponivel -= tempoUsado;
             instanteAtualIo += tempoUsado;
 
-            if (ioConcluido(pid)) {
-                finalizarIo(pid, (instanteAtualIo));
+            if (ioConcluido(idProc)) {
+                finalizarIo(idProc, (instanteAtualIo));
             }
         }
 
@@ -272,6 +272,7 @@ public class Main {
         tipoIO[pidDoProcesso]          = tipoDeIo;
         inicioProximoIo[pidDoProcesso] = inicioDoProcessamentoIo;
         tempoIoProcessado[pidDoProcesso]    = 0;
+        instanteEntradaIo[pidDoProcesso]    = -1;
     }
 
     private static int proximoPidDisponivel() {

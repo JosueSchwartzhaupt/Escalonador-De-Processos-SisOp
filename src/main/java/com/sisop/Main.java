@@ -168,6 +168,7 @@ public class Main {
 
         status[pid] = PRONTO;
 
+        //Ao concluir I/O, retorna para a fila adequada conforme o tipo de dispositivo.
         if (tipoIO[pid] == DISCO) {
             filaBaixa.add(pid);
             loggarNaLinhaDoTempo(instanteFinalizado, "P" + pid + " retornou do DISCO -> fila BAIXA");
@@ -209,6 +210,7 @@ public class Main {
     private static int executarPorAteUmQuantum(int processoAtual, int tempo) {
         int tempoQueFalta = tempoTotal[processoAtual] - tempoProcessado[processoAtual];
         int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM ? inicioProximoIo[processoAtual] -tempo : QUANTUM;
+        // O processo ocupa a CPU por até um quantum ou até ocorrer finalização/I/O.
         int tempoParaProcessar = Math.min(tempoQueFalta ,Math.min(tempoAteInterrupcao, QUANTUM));
 
         tempoProcessado[processoAtual] += tempoParaProcessar;
@@ -216,8 +218,9 @@ public class Main {
         return tempoParaProcessar;
     }
 
-    //TODO: testar também se o tempo De IO foi processado
+    //TODO: testar também se o tempo De IO foi processado?
     private static boolean isProcessoFinalizado(int processoAtual) {
+        //quando o tempo de CPU restante chegar a zero, o processo é encerrado.
         return tempoProcessado[processoAtual] == tempoTotal[processoAtual];
     }
 

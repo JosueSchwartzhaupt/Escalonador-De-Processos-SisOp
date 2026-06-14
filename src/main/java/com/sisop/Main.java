@@ -183,6 +183,9 @@ public class Main {
             filaAlta.add(pid);
             loggarNaLinhaDoTempo(instanteFinalizado, "P" + pid + " retornou de " + nomeIO(tipoIO[pid]) + " -> fila ALTA");
         }
+        tempoIoProcessado[pid] = 0;
+        tipoIO[pid] = NENHUM;
+        inicioProximoIo[pid] = -1;
     }
 
     private static boolean ioConcluido(int pid) {
@@ -213,7 +216,7 @@ public class Main {
 
     private static int executarPorAteUmQuantum(int processoAtual, int tempo) {
         int tempoQueFalta = tempoTotal[processoAtual] - tempoProcessado[processoAtual];
-        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM && tempo <= tempoProcessado[processoAtual] ? inicioProximoIo[processoAtual] - tempoProcessado[processoAtual] : QUANTUM;
+        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM ? inicioProximoIo[processoAtual] - tempoProcessado[processoAtual] : QUANTUM;
         // O processo ocupa a CPU por até um quantum ou até ocorrer finalização/I/O.
         int tempoParaProcessar = Math.min(tempoQueFalta ,Math.min(tempoAteInterrupcao, QUANTUM));
 

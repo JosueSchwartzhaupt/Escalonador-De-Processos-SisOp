@@ -209,7 +209,7 @@ public class Main {
 
     private static int executarPorAteUmQuantum(int processoAtual, int tempo) {
         int tempoQueFalta = tempoTotal[processoAtual] - tempoProcessado[processoAtual];
-        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM ? inicioProximoIo[processoAtual] -tempo : QUANTUM;
+        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM ? inicioProximoIo[processoAtual] - tempoProcessado[processoAtual] : QUANTUM;
         // O processo ocupa a CPU por até um quantum ou até ocorrer finalização/I/O.
         int tempoParaProcessar = Math.min(tempoQueFalta ,Math.min(tempoAteInterrupcao, QUANTUM));
 
@@ -225,7 +225,7 @@ public class Main {
     }
 
     private static boolean processoSolicitouIO(int processoAtual, int tempo) {
-        return tipoIO[processoAtual] != NENHUM && inicioProximoIo[processoAtual] <= tempo;
+        return tempoProcessado[processoAtual] >= inicioProximoIo[processoAtual]
     }
 
     private static void imprimirLinhaDoTempo() {

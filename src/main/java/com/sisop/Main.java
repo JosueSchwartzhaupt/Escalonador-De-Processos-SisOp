@@ -44,7 +44,8 @@ public class Main {
     //TODO: Ver se queremos que um processo possa ter mais de um evento IO
     static int[] tipoIO          = new int[MAX_PROC];
     static int[] inicioProximoIo = new int[MAX_PROC];
-    static int[] ioProcessado = new int[MAX_PROC];
+    static int[] tempoIoProcessado = new int[MAX_PROC];
+    static int[] instanteEntradaIo = new int[MAX_PROC];
 
     // ----------------------------------------------------------------
     // FILAS — arrays simples (não circulares) com ponteiro de tamanho
@@ -83,14 +84,21 @@ public class Main {
             status[processoAtual] = EXECUTANDO;
             tempo += executarPorAteUmQuantum(processoAtual, tempo);
 
-            if (isProcessoFinalizado(processoAtual)) status[processoAtual] = FINALIZADO;
+            if (isProcessoFinalizado(processoAtual)){
+                status[processoAtual] = FINALIZADO;
+                loggarNaLinhaDoTempo(tempo,"P" + processoAtual+ " finalizado");
+            }
             else if (processoSolicitouIO(processoAtual, tempo)) {
                 status[processoAtual] = BLOQUEADO;
+                instanteEntradaIo[processoAtual] = tempo;
                 filaIO.add(processoAtual);
+                loggarNaLinhaDoTempo(tempo,"P" + processoAtual + " solicitou I/O " + nomeIO(tipoIO[processoAtual])
+                );
             }
             else {
                 status[processoAtual] = PRONTO;
                 filaBaixa.add(processoAtual);
+                loggarNaLinhaDoTempo(tempo,"P" + processoAtual + " sofreu preempção -> fila BAIXA");
             }
 
         }
@@ -142,23 +150,20 @@ public class Main {
 
         while (tempoDisponivel > 0 && !filaIO.isEmpty()) {
             int pid = filaIO.peek();
+            tempoDisponivel = Math.min(tempoDisponivel, tempo - instanteEntradaIo[pid]);
 
-            if (tipoIO[pid] == NENHUM) {
-                filaIO.remove();
-                continue;
-            }
 
             int tempoUsado = Math.min(
-                    duracaoIo(tipoIO[pid]) - ioProcessado[pid],
+                    duracaoIo(tipoIO[pid]) - tempoIoProcessado[pid],
                     tempoDisponivel
             );
 
-            ioProcessado[pid] += tempoUsado;
+            tempoIoProcessado[pid] += tempoUsado;
             tempoDisponivel -= tempoUsado;
             instanteAtualIo += tempoUsado;
 
             if (ioConcluido(pid)) {
-                finalizarIo(pid, (tempoAnterior + instanteAtualIo));
+                finalizarIo(pid, (instanteAtualIo));
             }
         }
 
@@ -178,13 +183,10 @@ public class Main {
             filaAlta.add(pid);
             loggarNaLinhaDoTempo(instanteFinalizado, "P" + pid + " retornou de " + nomeIO(tipoIO[pid]) + " -> fila ALTA");
         }
-
-        ioProcessado[pid] = -1;
-        tipoIO[pid] = NENHUM;
     }
 
     private static boolean ioConcluido(int pid) {
-        return ioProcessado[pid] >= duracaoIo(tipoIO[pid]);
+        return tempoIoProcessado[pid] >= duracaoIo(tipoIO[pid]);
     }
 
     private static int duracaoIo(int tipoIo) {
@@ -211,7 +213,7 @@ public class Main {
 
     private static int executarPorAteUmQuantum(int processoAtual, int tempo) {
         int tempoQueFalta = tempoTotal[processoAtual] - tempoProcessado[processoAtual];
-        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM ? inicioProximoIo[processoAtual] - tempoProcessado[processoAtual] : QUANTUM;
+        int tempoAteInterrupcao = tipoIO[processoAtual] != NENHUM && tempo <= tempoProcessado[processoAtual] ? inicioProximoIo[processoAtual] - tempoProcessado[processoAtual] : QUANTUM;
         // O processo ocupa a CPU por até um quantum ou até ocorrer finalização/I/O.
         int tempoParaProcessar = Math.min(tempoQueFalta ,Math.min(tempoAteInterrupcao, QUANTUM));
 
@@ -227,7 +229,7 @@ public class Main {
     }
 
     private static boolean processoSolicitouIO(int processoAtual, int tempo) {
-        return tempoProcessado[processoAtual] >= inicioProximoIo[processoAtual];
+        return tipoIO[processoAtual] != NENHUM && tempoProcessado[processoAtual] == inicioProximoIo[processoAtual];
     }
 
     private static void imprimirLinhaDoTempo() {
@@ -264,7 +266,7 @@ public class Main {
 
         tipoIO[pidDoProcesso]          = tipoDeIo;
         inicioProximoIo[pidDoProcesso] = inicioDoProcessamentoIo;
-        ioProcessado[pidDoProcesso]    = 0;
+        tempoIoProcessado[pidDoProcesso]    = 0;
     }
 
     private static int proximoPidDisponivel() {

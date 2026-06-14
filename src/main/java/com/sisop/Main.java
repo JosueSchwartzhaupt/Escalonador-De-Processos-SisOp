@@ -62,6 +62,24 @@ public class Main {
 
     static Map<Integer, List<String>> linhaDoTempo = new HashMap<>();
 
+    private static int duracaoIo(int tipoIo) {
+        return switch (tipoIo) {
+            case DISCO      -> 8;
+            case FITA       -> 3;
+            case IMPRESSORA -> 5;
+            default         -> 0;
+        };
+    }
+
+    static String nomeIO(int t) {
+        switch (t) {
+            case DISCO:      return "DISCO";
+            case FITA:       return "FITA";
+            case IMPRESSORA: return "IMPRESSORA";
+            default:         return "NENHUM";
+        }
+    }
+
     public static void main(String[] args) {
         inicializarProcessos();
         inicializarFilas();
@@ -92,8 +110,7 @@ public class Main {
                 status[processoAtual] = BLOQUEADO;
                 instanteEntradaIo[processoAtual] = tempo;
                 filaIO.add(processoAtual);
-                loggarNaLinhaDoTempo(tempo,"P" + processoAtual + " solicitou I/O " + nomeIO(tipoIO[processoAtual])
-                );
+                loggarNaLinhaDoTempo(tempo,"P" + processoAtual + " solicitou I/O " + nomeIO(tipoIO[processoAtual]));
             }
             else {
                 status[processoAtual] = PRONTO;
@@ -127,6 +144,8 @@ public class Main {
 
     private static void moverNovosProcessosParaFilaAlta(int tempo) {
         var processosParaAdicionar = new HashMap<Integer, Integer>();
+
+        // Verificar quais processos novos existem até o tempo atual
         for (int id = 0; id < pidRegistrados; id++) {
             if(status[id] == NOVO && tempoChegada[id] <= tempo){
                 processosParaAdicionar.put(id, tempoChegada[id]);
@@ -134,6 +153,7 @@ public class Main {
             }
         }
 
+        // Colocar eles em ordem na fila alta
         processosParaAdicionar.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
@@ -143,15 +163,16 @@ public class Main {
                 });
     }
 
-    //TODO: Ver se é essa a logica da fila de IO, talves aqui precise fazer round robin também
     private static void atualizarFilasDeIo(int tempo) {
         int tempoDisponivel = tempo - tempoAnterior;
         int instanteAtualIo = tempoAnterior;
 
+        // Enquanto ainda tiver tempo não contabilizado e processos esperando na fila de IO
         while (tempoDisponivel > 0 && !filaIO.isEmpty()) {
             int pid = filaIO.peek();
-            tempoDisponivel = Math.min(tempoDisponivel, tempo - instanteEntradaIo[pid]);
 
+            // Corrige o tempo disponivel com o tempo de entrada do processo na fila
+            tempoDisponivel = Math.min(tempoDisponivel, tempo - instanteEntradaIo[pid]);
 
             int tempoUsado = Math.min(
                     duracaoIo(tipoIO[pid]) - tempoIoProcessado[pid],
@@ -192,24 +213,6 @@ public class Main {
         return tempoIoProcessado[pid] >= duracaoIo(tipoIO[pid]);
     }
 
-    private static int duracaoIo(int tipoIo) {
-        return switch (tipoIo) {
-            case DISCO      -> 8;
-            case FITA       -> 3;
-            case IMPRESSORA -> 5;
-            default         -> 0;
-        };
-    }
-
-    static String nomeIO(int t) {
-        switch (t) {
-            case DISCO:      return "DISCO";
-            case FITA:       return "FITA";
-            case IMPRESSORA: return "IMPRESSORA";
-            default:            return "NENHUM";
-        }
-    }
-
     private static void registrarCpuOciosa(int tempo) {
         loggarNaLinhaDoTempo(tempo, "CPU ociosa");
     }
@@ -225,9 +228,8 @@ public class Main {
         return tempoParaProcessar;
     }
 
-    //TODO: testar também se o tempo De IO foi processado?
     private static boolean isProcessoFinalizado(int processoAtual) {
-        //quando o tempo de CPU restante chegar a zero, o processo é encerrado.
+        //Quando o tempo de CPU restante chegar a zero, o processo é encerrado.
         return tempoProcessado[processoAtual] == tempoTotal[processoAtual];
     }
 

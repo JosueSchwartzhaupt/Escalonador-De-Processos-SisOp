@@ -14,13 +14,13 @@ Java
 ## Premissas do escalonador
 - Quantum: 3 unidades de tempo
 - Número máximo de processos: 8
-- Tempos de CPU:   Gerados aleatoriamente entre 5 a 15.
+- Tempos de CPU:   Gerados aleatoriamente entre 5 a 15. (REVER)
 - Tempos de I/O: 
- - Imperssora:     3 unidades
- - Disco:          4 unidades
- - Fita magnética: 6 unidades
-- Critério de geração dos processos: São gerados no inicio da simulação.
-- Semente aleatória, se aplicável: 42.
+ - Imperssora:     5 unidades
+ - Disco:          8 unidades
+ - Fita magnética: 3 unidades
+- Critério de geração dos processos: São gerados no inicio da simulação.(REVER)
+- Semente aleatória, se aplicável: 42.(REVER)
 
 ## Como executar o projeto
 Abrir o terminal na pasta raiz do projeto., compile e execute:  

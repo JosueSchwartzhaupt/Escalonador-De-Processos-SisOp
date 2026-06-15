@@ -10,9 +10,6 @@ public class Main {
     // ----------------------------------------------------------------
     static final int MAX_PROC        = 8;
     static final int QUANTUM         = 3;
-    static final int SEED            = 42;
-    static final int CPU_MIN         = 5;
-    static final int CPU_MAX         = 15;
 
     // Tipos de I/O
     static final int NENHUM       = 0;
@@ -49,7 +46,6 @@ public class Main {
     // ----------------------------------------------------------------
     // FILAS — arrays simples (não circulares) com ponteiro de tamanho
     // ----------------------------------------------------------------
-    static final int CAP     = MAX_PROC + 2;
 
     static Queue<Integer> filaIO = new LinkedList<>();
 
@@ -81,12 +77,12 @@ public class Main {
     }
 
     static String nomeIO(int t) {
-        switch (t) {
-            case DISCO:      return "DISCO";
-            case FITA:       return "FITA";
-            case IMPRESSORA: return "IMPRESSORA";
-            default:         return "NENHUM";
-        }
+        return switch (t) {
+            case DISCO -> "DISCO";
+            case FITA -> "FITA";
+            case IMPRESSORA -> "IMPRESSORA";
+            default -> "NENHUM";
+        };
     }
 
     public static void main(String[] args) {
@@ -121,7 +117,7 @@ public class Main {
                 loggarNaLinhaDoTempo(tempo,"P" + processoAtual+ " finalizado");
                 instanteFinalizacao[processoAtual]= tempo;
             }
-            else if (processoSolicitouIO(processoAtual, tempo)) {
+            else if (processoSolicitouIO(processoAtual)) {
                 status[processoAtual] = BLOQUEADO;
                 instanteEntradaIo[processoAtual] = tempo;
                 filaIO.add(processoAtual);
@@ -262,7 +258,7 @@ public class Main {
         return tempoProcessado[processoAtual] == tempoTotal[processoAtual];
     }
 
-    private static boolean processoSolicitouIO(int processoAtual, int tempo) {
+    private static boolean processoSolicitouIO(int processoAtual) {
         return tipoIO[processoAtual] != NENHUM && tempoProcessado[processoAtual] == inicioProximoIo[processoAtual];
     }
 

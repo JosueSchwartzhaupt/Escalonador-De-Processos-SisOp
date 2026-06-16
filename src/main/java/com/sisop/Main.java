@@ -24,6 +24,10 @@ public class Main {
     static final int BLOQUEADO    = 3;
     static final int FINALIZADO   = 4;
 
+    // Geração randomica de processos
+    static final int MAX_CPU        = 15;
+    static final int MIN_CPU        = 5;
+
     // ----------------------------------------------------------------
     // PCB — arrays paralelos
     // ----------------------------------------------------------------
@@ -148,6 +152,7 @@ public class Main {
         registrarNovoProcesso(4,5,NENHUM,-1);
         registrarNovoProcesso(8,7,NENHUM,-1);
         registrarNovoProcesso(12,8,NENHUM,-1);
+//        gerarProcessosRandomicos(3);
     }
 
     private static void inicializarFilas() {
@@ -295,35 +300,46 @@ public class Main {
 
     private static void imprimirResumoFinal(int tempoSimulacao) {
         System.out.println();
-        System.out.println("=".repeat(60));
+        System.out.println("=".repeat(75));
         System.out.println("  RESUMO FINAL");
-        System.out.println("=".repeat(60));
+        System.out.println("=".repeat(75));
 
         int totalPreempcoes = 0;
         int somaEspera = 0;
+        int somaTurnaround = 0;
 
-        System.out.printf("%-5s %-10s %-10s %-13s %-10s%n",
-                "PID", "Chegada", "Fim", "Temp Espera", "Preempções");
-        System.out.println("-".repeat(50));
+        System.out.printf("%-5s %-10s %-10s %-13s %-12s %-10s%n",
+                "PID", "Chegada", "Fim", "Temp Espera", "Turnaround", "Preemp.");
+
+        System.out.println("-".repeat(75));
 
         for (int i = 0; i < pidRegistrados; i++) {
             totalPreempcoes += contPreempcoes[i];
             somaEspera += tempoDeEspera[i];
 
-            System.out.printf("P%-4d %-10d %-10d %-13d %-10d%n",
+            int turnaround = instanteFinalizacao[i] - tempoChegada[i];
+            somaTurnaround += turnaround;
+
+            System.out.printf("P%-4d %-10d %-10d %-13d %-12d %-10d%n",
                     i,
                     tempoChegada[i],
                     instanteFinalizacao[i],
                     tempoDeEspera[i],
+                    turnaround,
                     contPreempcoes[i]);
         }
 
-        System.out.println("-".repeat(50));
+        System.out.println("-".repeat(75));
+
         System.out.printf("Tempo total da simulação : %d unidades%n", tempoSimulacao);
         System.out.printf("CPU ociosa               : %d unidades%n", cpuOciosaTotal);
-        System.out.printf("Total de preempções      : %d%n",          totalPreempcoes);
-        System.out.printf("Tempo de espera médio    : %.2f%n",        (double) somaEspera      / pidRegistrados);
-        System.out.println("=".repeat(60));
+        System.out.printf("Total de preempções      : %d%n", totalPreempcoes);
+        System.out.printf("Tempo de espera médio    : %.2f%n",
+                (double) somaEspera / pidRegistrados);
+        System.out.printf("Turnaround médio         : %.2f%n",
+                (double) somaTurnaround / pidRegistrados);
+
+        System.out.println("=".repeat(75));
     }
 
     private static void registrarNovoProcesso(int tempoDeChegada, int tempoDeProcessamentoTotal, int tipoDeIo, int inicioDoProcessamentoIo) {
@@ -352,6 +368,23 @@ public class Main {
         linhaDoTempo
                 .computeIfAbsent(tempo, k -> new ArrayList<>())
                 .add(mensagem);
+    }
+
+    private static void gerarProcessosRandomicos(int seed) {
+        Random random = new Random(seed);
+        int tempoChegadaAnterior = 0;
+
+        for (int i = 0; i < random.nextInt(MAX_PROC)+1; i++) {
+            int tempoDeChegada = i == 0? tempoChegadaAnterior : (random.nextInt(tempoChegadaAnterior, MAX_CPU) + 1);
+            int tempoDeProcessamento = random.nextInt(MIN_CPU, MAX_CPU + 1);
+            int tipoDeIo = random.nextInt(NENHUM, IMPRESSORA + 1);
+            int inicioDoProcessamentoIo = tipoDeIo == NENHUM? -1 : random.nextInt(1, tempoDeProcessamento);
+
+            registrarNovoProcesso(tempoDeChegada, tempoDeProcessamento, tipoDeIo, inicioDoProcessamentoIo);
+
+            tempoChegadaAnterior = tempoDeChegada;
+        }
+
     }
 
 }

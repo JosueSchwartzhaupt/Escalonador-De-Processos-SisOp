@@ -14,13 +14,13 @@ Java
 ## Premissas do escalonador
 - Quantum: 3 unidades de tempo
 - Número máximo de processos: 8
-- Tempos de CPU:   Gerados aleatoriamente entre 5 a 15. (REVER)
+- Tempos de CPU:   Gerados aleatoriamente entre 5 a 15.
 - Tempos de I/O: 
  - Imperssora:     5 unidades
  - Disco:          8 unidades
  - Fita magnética: 3 unidades
-- Critério de geração dos processos: São gerados no inicio da simulação.(REVER)
-- Semente aleatória, se aplicável: 42.(REVER)
+- Critério de geração dos processos: São gerados no inicio da simulação. Para testes estamos usando um grupo de processos gerados manualmente.
+- Semente aleatória, se aplicável: 3.
 
 ## Como executar o projeto
 Abrir o terminal na pasta raiz do projeto., compile e execute:  
@@ -28,8 +28,8 @@ javac Escalonador.java
 java Escalonador  
 
 # Bônus Docker, se implementado:
-docker build -t so-escalonador-grupo-x .  
-docker run --rm so-escalonador-grupo-x  
+docker build -t so-escalonador-grupo-4 .  
+docker run --rm so-escalonador-grupo-4  
 
 
 # O que aparece na saída

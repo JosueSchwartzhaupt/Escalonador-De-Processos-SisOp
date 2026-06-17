@@ -24,28 +24,34 @@ Java
 
 ## Como executar o projeto
 Clone o repositório:
-`git clone <URL_DO_REPOSITORIO>
-cd Escalonador-De-Processos-SisOp`
+
+`git clone <URL_DO_REPOSITORIO>`
+
+`cd Escalonador-De-Processos-SisOp`
+
 Certifique-se de possuir o Java 21 e o Maven instalados.
 Abra o terminal na pasta raiz do projeto, compile e execute:
 
 Utilizando Maven (recomendado):
 
-`mvn clean package
-java -jar target/*.jar`
+`mvn clean package`
+
+`java -jar target/*.jar`
 
 Ou diretamente com o Java:
 
-`javac src/main/java/com/sisop/Main.java
-java src/main/java/com/sisop/Main.java`
+`javac src/main/java/com/sisop/Main.java`
+
+`java src/main/java/com/sisop/Main.java`
 
 Também é possível abrir o projeto em uma IDE compatível com Maven (IntelliJ IDEA, Eclipse ou VS Code) e executar a classe Main localizada em src/main/java/com/sisop/Main.java.
 
 # Bônus Docker
 Caso possua o Docker instalado, é possível executar a aplicação sem instalar Java ou Maven localmente.
 
-`docker build -t so-escalonador-grupo-4 .
-docker run --rm so-escalonador-grupo-4  `
+`docker build -t so-escalonador-grupo-4 .`
+
+`docker run --rm so-escalonador-grupo-4  `
 
 
 # O que aparece na saída

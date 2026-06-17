@@ -23,9 +23,9 @@ Java
 - Semente aleatória, se aplicável: 3.
 
 ## Como executar o projeto
-Abrir o terminal na pasta raiz do projeto., compile e execute:  
-javac Escalonador.java  
-java Escalonador  
+Abrir o terminal na pasta raiz do projeto, compile e execute:  
+javac Main.java  
+java Main  
 
 # Bônus Docker, se implementado:
 docker build -t so-escalonador-grupo-4 .  

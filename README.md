@@ -14,7 +14,7 @@ Java
 ## Premissas do escalonador
 - Quantum: 3 unidades de tempo
 - Número máximo de processos: 8
-- Tempos de CPU:   Gerados aleatoriamente entre 5 a 15.
+- Tempos de CPU:   Gerados aleatoriamente entre 5 a 15, ou configurados estaticamente para testes.
 - Tempos de I/O: 
  - Imperssora:     5 unidades
  - Disco:          8 unidades

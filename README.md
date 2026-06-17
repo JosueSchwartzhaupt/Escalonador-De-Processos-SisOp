@@ -27,7 +27,7 @@ Abrir o terminal na pasta raiz do projeto, compile e execute:
 javac Main.java  
 java Main  
 
-# Bônus Docker, se implementado:
+# Bônus Docker
 docker build -t so-escalonador-grupo-4 .  
 docker run --rm so-escalonador-grupo-4  
 

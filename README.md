@@ -58,8 +58,8 @@ Caso possua o Docker instalado, é possível executar a aplicação sem instalar
 A saída apresenta a linha do tempo da simulação, mostrando a criação dos processos, execução na CPU, solicitações e retornos de I/O, preempções, mudanças de fila, períodos de CPU ociosa e finalização dos processos. Ao final, é exibido um resumo com tempo de espera, turnaround, número de preempções e estatísticas gerais da simulação.
   
 # Limitações conhecidas
-Não há encapsulamento do PCB em uma classe específica.
-Não foi implementada a relação pai-filho entre processos (PPID).
-O sistema de I/O processa apenas uma operação por vez.
-Não há mecanismo de aging nem terceira fila de prioridade.
-A visualização é apenas textual, sem interface gráfica ou diagrama de Gantt.
+- Não há encapsulamento do PCB em uma classe específica.
+- Não foi implementada a relação pai-filho entre processos (PPID).
+- O sistema de I/O processa apenas uma operação por vez.
+- Não há mecanismo de aging nem terceira fila de prioridade.
+- A visualização é apenas textual, sem interface gráfica ou diagrama de Gantt.
